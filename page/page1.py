@@ -1,16 +1,12 @@
 import pandas as pd
 import streamlit as st
-import os
 
-# 엑셀 파일 읽기
-file_path = 'LG_gong_1018.xlsx'
-try:
-    df = pd.read_excel(file_path)
-except FileNotFoundError:
-    st.error('파일을 찾을 수 없습니다. 올바른 파일 경로를 확인하세요.')
-    st.stop()
+# 엑셀 파일 업로드
+uploaded_file = st.file_uploader('엑셀 파일 업로드', type=['xls', 'xlsx'])
+if uploaded_file is not None:
+    df = pd.read_excel(uploaded_file)
 else:
-    st.error('파일을 찾을 수 없습니다. 올바른 파일 경로를 확인하세요.')
+    st.error('파일을 업로드해주세요.')
     st.stop()
 
 # 필요한 열만 선택
