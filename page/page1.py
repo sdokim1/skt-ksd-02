@@ -19,7 +19,7 @@ desired_columns = [
 ]
 df = df[desired_columns]
 
-# cell_id와 pci를 "_"로 연결하여 첫 번째 열에 추가
+# cell_id와 pci를 "_"로 연결하여 identifier 열 추가
 df['identifier'] = df['cell_id'].astype(str) + '_' + df['pci'].astype(str)
 
 # identifier가 생성되지 않은 행 삭제
@@ -45,6 +45,9 @@ condition_capacity = (
 )
 df.loc[condition_capacity, '구분'] = df['구분'] + df['구분'].apply(lambda x: '; ' if x != '' else '') + '용량'
 
+# pandas styler 최대 셀 제한 설정
+pd.set_option("styler.render.max_elements", 482688)
+
 # 조건에 맞는 값들을 빨간색으로 표시하는 스타일링 함수 정의
 def highlight_cells(val, column_name):
     if column_name == 'rrc_s_rate' and val < 96:
@@ -67,8 +70,10 @@ def highlight_cells(val, column_name):
 st.title('LG 공공 데이터 분석')
 
 # 데이터프레임 스타일링 적용 후 출력
-styled_df = df.style.applymap(lambda val: highlight_cells(val, column_name=df.columns[df.columns.get_loc(val.name)]), subset=[
+styled_df = df.style.apply(lambda col: col.map(lambda val: highlight_cells(val, col.name)), subset=[
     'rrc_s_rate', 'erab_s_rate', 'endc_s_rate', 'cd', 'dl_prb_use_rate', 'ul_prb_use_rate', 'pccu'
 ])
 
-st.dataframe(styled_df)
+st.dataframe(styled_df)  # Streamlit을 사용하여 데이터프레임 출력
+
+# 앱 실행 명령어: streamlit run /workspaces/skt-ksd-02/page/page1.py
