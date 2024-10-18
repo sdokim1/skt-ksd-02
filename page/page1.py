@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import os
 
 # 엑셀 파일 읽기
 file_path = 'LG_gong_1018.xlsx'
@@ -46,7 +47,7 @@ condition_capacity = (
     (df['ul_prb_use_rate'] >= 70) |
     (df['pccu'] >= 600)
 )
-df.loc[condition_capacity, '구분'] = df['구분'] + ('; ' if df['구분'] != '' else '') + '용량'
+df.loc[condition_capacity, '구분'] = df['구분'] + df['구분'].apply(lambda x: '; ' if x != '' else '') + '용량'
 
 # 조건에 맞는 값들을 빨간색으로 표시하는 스타일링 함수 정의
 def highlight_cells(val, column_name):
