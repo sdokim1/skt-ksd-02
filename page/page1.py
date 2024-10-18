@@ -45,6 +45,9 @@ condition_capacity = (
 )
 df.loc[condition_capacity, '구분'] = df['구분'] + df['구분'].apply(lambda x: '; ' if x != '' else '') + '용량'
 
+# 구분 열이 공백인 행 제외
+df = df[df['구분'] != '']
+
 # pandas styler 최대 셀 제한 설정
 pd.set_option("styler.render.max_elements", 482688)
 
