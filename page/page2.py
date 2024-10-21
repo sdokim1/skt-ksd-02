@@ -87,13 +87,32 @@ def highlight_cells(val, column_name):
 st.title('LGU+ 공동망 데이터 분석')
 
 # 스타일링 적용
-styled_df = df.style.applymap(lambda val: highlight_cells(val, 'rrc_s_rate'), subset=['rrc_s_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'erab_s_rate'), subset=['erab_s_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'endc_s_rate'), subset=['endc_s_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'cd'), subset=['cd'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'dl_prb_use_rate'), subset=['dl_prb_use_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'ul_prb_use_rate'), subset=['ul_prb_use_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'pccu'), subset=['pccu'])
+styled_df = df.style.map(lambda val: highlight_cells(val, 'rrc_s_rate'), subset=['rrc_s_rate'])
+styled_df = styled_df.map(lambda val: highlight_cells(val, 'erab_s_rate'), subset=['erab_s_rate'])
+styled_df = styled_df.map(lambda val: highlight_cells(val, 'endc_s_rate'), subset=['endc_s_rate'])
+styled_df = styled_df.map(lambda val: highlight_cells(val, 'cd'), subset=['cd'])
+styled_df = styled_df.map(lambda val: highlight_cells(val, 'dl_prb_use_rate'), subset=['dl_prb_use_rate'])
+styled_df = styled_df.map(lambda val: highlight_cells(val, 'ul_prb_use_rate'), subset=['ul_prb_use_rate'])
+styled_df = styled_df.map(lambda val: highlight_cells(val, 'pccu'), subset=['pccu'])
 
 # 최적화된 데이터프레임 출력 (높이, 너비 설정)
 st.write(styled_df)
+
+# 데이터 통계 출력
+st.subheader('기본 통계')
+st.write(df.describe())
+
+# eqp_vend_nm, sido_nm, sgg_nm 각각의 count를 bar 형식으로 시각화
+st.subheader('eqp_vend_nm, sido_nm, sgg_nm Count Plot')
+
+# eqp_vend_nm count plot
+eqp_vend_counts = df['eqp_vend_nm'].value_counts()
+st.bar_chart(eqp_vend_counts)
+
+# sido_nm count plot
+sido_counts = df['sido_nm'].value_counts()
+st.bar_chart(sido_counts)
+
+# sgg_nm count plot
+sgg_counts = df['sgg_nm'].value_counts()
+st.bar_chart(sgg_counts)
