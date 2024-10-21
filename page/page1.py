@@ -1,17 +1,21 @@
 import pandas as pd
-import streamlit as st
+import sqlite3
+import matplotlib.pyplot as plt
+import ace_tools as tools
+
+# 엑셀 파일 경로 설정
+file_path = '/mnt/data/LG_gong_1018.xlsx'
 
 # 엑셀 파일 읽기
-file_path = '/workspaces/skt-ksd-02/LG_gong_1018.xlsx'
 try:
     df = pd.read_excel(file_path, engine='openpyxl')
 except FileNotFoundError:
-    st.error('파일을 찾을 수 없습니다. 올바른 파일 경로를 확인하세요.')
-    st.stop()
+    print('파일을 찾을 수 없습니다. 올바른 파일 경로를 확인하세요.')
+    exit()
 
 # 필요한 열만 선택
 desired_columns = [
-    "eqp_vend_nm", "srvc_net_cd", "eqp_own_bizr_cd", "sido_nm", "sgg_nm", "cell_id", "pci", "frequency",
+    "eqp_vend_nm", "srvc_net_cd", "eqp_own_bizr_cd", "sido_nm", "sgg_nm","eqp_fst_mapp_id", "cell_id", "pci", "frequency",
     "rrc_attempt", "rrc_success", "rrc_s_rate", "rre_attempt", "rre_success", "rre_s_rate", "rre_g_rate",
     "erab_attempt", "erab_success", "erab_s_rate", "cd_setup", "cd", "cd_rate", "cd_rlf", "dl_prb_use_rate",
     "ul_prb_use_rate", "packet_mac_dl_volume", "packet_mac_ul_volume", "endc_attempt", "endc_success", "endc_s_rate",
@@ -43,7 +47,7 @@ frequency_mapping = {name: chr(65 + i) for i, name in enumerate(unique_frequency
 df['frequency'] = df['frequency'].map(frequency_mapping)
 
 # cell_id와 pci를 "_"로 연결하여 identifier 열 추가
-df['identifier'] = df['cell_id'].astype(str) + '_' + df['pci'].astype(str)
+df['identifier'] = df['eqp_fst_mapp_id'].astype(str) + '_' + df['cell_id'].astype(str) + '_' + df['pci'].astype(str)
 
 # identifier가 생성되지 않은 행 삭제
 df = df.dropna(subset=['identifier'])
@@ -71,29 +75,40 @@ df.loc[condition_capacity, '구분'] = df['구분'] + df['구분'].apply(lambda 
 # 구분 열이 공백인 행 제외
 df = df[df['구분'] != '']
 
-# 조건에 맞는 값들을 빨간색으로 표시하는 스타일링 함수 정의
-def highlight_cells(val, column_name):
-    if column_name in ['rrc_s_rate', 'erab_s_rate', 'endc_s_rate'] and val < 96:
-        return 'color: red'
-    elif column_name == 'cd' and val > 5000:
-        return 'color: red'
-    elif column_name in ['dl_prb_use_rate', 'ul_prb_use_rate'] and val >= 70:
-        return 'color: red'
-    elif column_name == 'pccu' and val >= 600:
-        return 'color: red'
-    return ''
+# 데이터베이스 파일 경로 설정
+db_path = '/mnt/data/tnp_db.sqlite'
 
-# Streamlit 앱 설정
-st.title('LGU+ 공동망 데이터 분석')
+# SQLite 데이터베이스 연결
+conn = sqlite3.connect(db_path)
 
-# 스타일링 적용
-styled_df = df.style.applymap(lambda val: highlight_cells(val, 'rrc_s_rate'), subset=['rrc_s_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'erab_s_rate'), subset=['erab_s_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'endc_s_rate'), subset=['endc_s_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'cd'), subset=['cd'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'dl_prb_use_rate'), subset=['dl_prb_use_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'ul_prb_use_rate'), subset=['ul_prb_use_rate'])
-styled_df = styled_df.applymap(lambda val: highlight_cells(val, 'pccu'), subset=['pccu'])
+# 데이터프레임을 TnP DB로 내보내기
+table_name = 'lg_gong_data'
+df.to_sql(table_name, conn, if_exists='replace', index=False)
 
-# 최적화된 데이터프레임 출력 (높이, 너비 설정)
-st.write(styled_df)
+# 기본 통계 추출 및 사용자에게 표시
+df_statistics = df.describe()
+tools.display_dataframe_to_user(name="LGU+ 공동망 데이터 기본 통계", dataframe=df_statistics)
+
+# 시각화 - 각 열의 count를 바 차트로 표시
+fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+
+# eqp_vend_nm count
+df['eqp_vend_nm'].value_counts().plot(kind='bar', ax=axes[0])
+axes[0].set_title('Count of eqp_vend_nm')
+axes[0].set_xlabel('Vendor Name')
+axes[0].set_ylabel('Count')
+
+# sido_nm count
+df['sido_nm'].value_counts().plot(kind='bar', ax=axes[1])
+axes[1].set_title('Count of sido_nm')
+axes[1].set_xlabel('Sido Name')
+axes[1].set_ylabel('Count')
+
+# sgg_nm count
+df['sgg_nm'].value_counts().plot(kind='bar', ax=axes[2])
+axes[2].set_title('Count of sgg_nm')
+axes[2].set_xlabel('Sgg Name')
+axes[2].set_ylabel('Count')
+
+plt.tight_layout()
+plt.show()
